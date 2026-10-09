@@ -1,0 +1,86 @@
+locals {
+  volume_name = "${var.job_name}-data"
+
+  default_config = <<-EOT
+    multitenancy_enabled: false
+    server:
+      http_listen_port: ${var.http_port}
+      grpc_listen_port: ${var.grpc_port}
+    common:
+      storage:
+        backend: filesystem
+        filesystem:
+          dir: /data/blocks
+    blocks_storage:
+      backend: filesystem
+      bucket_store:
+        sync_dir: /data/tsdb-sync
+      filesystem:
+        dir: /data/blocks
+      tsdb:
+        dir: /data/tsdb
+    compactor:
+      data_dir: /data/compactor
+      sharding_ring:
+        kvstore:
+          store: memberlist
+    distributor:
+      ring:
+        instance_addr: 127.0.0.1
+        kvstore:
+          store: memberlist
+    ingester:
+      ring:
+        instance_addr: 127.0.0.1
+        kvstore:
+          store: memberlist
+        replication_factor: 1
+    ruler_storage:
+      backend: filesystem
+      filesystem:
+        dir: /data/ruler
+    store_gateway:
+      sharding_ring:
+        replication_factor: 1
+    memberlist:
+      join_members: []
+    limits:
+      compactor_blocks_retention_period: ${var.retention_period}
+  EOT
+
+  config = coalesce(var.config, local.default_config)
+}
+
+resource "nomad_dynamic_host_volume" "data" {
+  name      = local.volume_name
+  namespace = var.namespace
+  plugin_id = "mkdir"
+
+  parameters = {
+    mode = "0700"
+    uid  = "0"
+    gid  = "0"
+  }
+
+  capability {
+    access_mode     = "single-node-writer"
+    attachment_mode = "file-system"
+  }
+}
+
+resource "nomad_job" "mimir" {
+  jobspec = templatefile("${path.module}/templates/mimir.nomad.hcl.tftpl", {
+    job_name         = var.job_name
+    namespace        = var.namespace
+    datacenters      = var.datacenters
+    volume_name      = nomad_dynamic_host_volume.data.name
+    internal_network = var.internal_host_network
+    image            = var.image
+    config           = local.config
+    http_port        = var.http_port
+    grpc_port        = var.grpc_port
+    resources        = var.resources
+  })
+
+  purge_on_destroy = true
+}
