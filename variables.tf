@@ -57,10 +57,15 @@ variable "internal_host_network" {
 }
 
 variable "resources" {
-  description = "CPU (MHz) and memory (MB) for the Mimir task."
+  description = "CPU (MHz) and memory (MB) for the Mimir task: memory is what it reserves (sized to its use), memory_max how far it may grow (Nomad memory oversubscription)."
   type = object({
-    cpu    = optional(number, 1000)
-    memory = optional(number, 2048)
+    cpu        = optional(number, 1000)
+    memory     = optional(number, 256)
+    memory_max = optional(number, 2048)
   })
   default = {}
+  validation {
+    condition     = var.resources.memory_max >= var.resources.memory
+    error_message = "resources.memory_max must be at least resources.memory."
+  }
 }

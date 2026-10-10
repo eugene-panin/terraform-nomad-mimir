@@ -18,3 +18,12 @@ run "it_exposes_a_consul_service_with_the_default_config" {
     error_message = "Metrics must never bind the public host network."
   }
 }
+
+run "memory_is_reserved_by_use_and_may_grow" {
+  command = apply
+
+  assert {
+    condition     = strcontains(nomad_job.mimir.jobspec, "memory     = 256") && strcontains(nomad_job.mimir.jobspec, "memory_max = 2048")
+    error_message = "The task must reserve its usual memory and be allowed to grow to memory_max."
+  }
+}
