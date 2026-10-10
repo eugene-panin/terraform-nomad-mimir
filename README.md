@@ -36,3 +36,11 @@ queries it.
 make lint
 make module-tests
 ```
+
+## Service mesh
+
+With `mesh.enabled`, the job gets an Envoy sidecar (transparent proxy) and
+Consul config entries: `service-defaults` (`mesh.protocol`, http) and
+`service-intentions` allowing `mesh.allow`. Mesh clients query
+`http://<job_name>.virtual.consul:9009/prometheus`. The HTTP port stays open:
+the platform's Alloy pushes to it and Consul's UI reads from it, from the host.

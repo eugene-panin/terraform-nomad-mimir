@@ -15,3 +15,12 @@
 - The task reserves 256 MB, sized to its use, and may grow to 2048 MB:
   `resources.memory_max` (Nomad memory oversubscription, which the platform
   turns on). It reserved more than it used before.
+
+## v0.1.2
+
+- `mesh`: Mimir can join the Consul service mesh — an Envoy sidecar with the
+  transparent proxy, so mesh services (the dashboards) reach it as
+  `<job_name>.virtual.consul` over mTLS as `mesh.allow` lets them
+  (service-intentions). The HTTP port stays open for the platform's Alloy, which
+  pushes from the host, and Consul's UI, which reads. Envoy's metrics are a
+  `<job_name>-envoy` service tagged for Alloy.
