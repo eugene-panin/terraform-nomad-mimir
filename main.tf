@@ -81,6 +81,8 @@ resource "nomad_job" "mimir" {
     grpc_port        = var.grpc_port
     resources        = var.resources
     mesh             = var.mesh
+    service_tags     = var.service_tags
+    service_meta     = var.service_meta
   })
 
   purge_on_destroy = true

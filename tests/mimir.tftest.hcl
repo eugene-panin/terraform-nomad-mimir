@@ -63,3 +63,26 @@ run "out_of_the_mesh_by_default" {
     error_message = "Without mesh.enabled there is no sidecar and no intentions."
   }
 }
+
+run "the_service_carries_the_tags_and_meta_given" {
+  command = apply
+
+  variables {
+    service_tags = ["damstack.provides=metrics@1"]
+    service_meta = { path = "/prometheus" }
+  }
+
+  assert {
+    condition     = strcontains(nomad_job.mimir.jobspec, "tags     = [\"damstack.provides=metrics@1\"]") && strcontains(nomad_job.mimir.jobspec, "meta {") && strcontains(nomad_job.mimir.jobspec, "path = \"/prometheus\"")
+    error_message = "The service must carry the tags and meta given."
+  }
+}
+
+run "the_service_has_no_tags_or_meta_by_default" {
+  command = apply
+
+  assert {
+    condition     = !strcontains(nomad_job.mimir.jobspec, "damstack.provides") && length(regexall("\n      meta {", nomad_job.mimir.jobspec)) == 0
+    error_message = "Without service_tags and service_meta the service must be as before."
+  }
+}
